@@ -191,7 +191,22 @@ class HomeContent extends StatefulWidget {
 }
 
 class _HomeContentState extends State<HomeContent> {
-  final _postsFuture = Supabase.instance.client.from('posts').select();
+  final _postsFuture = Supabase.instance.client.from('posts').select().then((
+    posts,
+  ) async {
+    final userIds = posts.map((post) => post['user_id']).toSet().toList();
+    final profiles = await Supabase.instance.client
+        .from('profiles')
+        .select('id, name, email')
+        .inFilter('id', userIds);
+
+    final profilesMap = {for (var profile in profiles) profile['id']: profile};
+    return posts.map((post) {
+      post['user_name'] = profilesMap[post['user_id']]?['name'] ?? 'Anonymous';
+      return post;
+    }).toList();
+  });
+
   String _sortBy = 'date'; // Default sorting by date
 
   @override
@@ -223,89 +238,126 @@ class _HomeContentState extends State<HomeContent> {
                 itemCount: posts.length,
                 itemBuilder: (context, index) {
                   final post = posts[index];
-                  return Card(
-                    margin: const EdgeInsets.all(12.0), // Increased padding
-                    shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(12),
-                    ),
-                    elevation: 4,
-                    color: const Color.fromARGB(255, 245, 184, 207),
-                    child: Padding(
-                      padding: const EdgeInsets.all(12.0), // Increased padding
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          Text(
-                            post['title'] ?? '',
-                            style: GoogleFonts.poppins(
-                              fontSize: 14,
-                              fontWeight: FontWeight.bold,
-                              color: Colors.black,
-                            ),
-                          ),
-                          const SizedBox(height: 4),
-                          Text(
-                            (post['content'] ?? '').toString().length > 50
-                                ? '${(post['content'] ?? '').toString().substring(0, 50)}...'
-                                : post['content'] ?? '',
-                            style: GoogleFonts.poppins(
-                              fontSize: 12,
-                              color: Colors.black87,
-                            ),
-                          ),
-                          const SizedBox(height: 8),
-                          Row(
-                            mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                            children: [
-                              ElevatedButton.icon(
-                                style: ElevatedButton.styleFrom(
-                                  backgroundColor: const Color(0xFF900C3F),
-                                  shape: RoundedRectangleBorder(
-                                    borderRadius: BorderRadius.circular(8),
-                                  ),
-                                ),
-                                onPressed: () {
-                                  _showCommentDialog(context, post['id']);
-                                },
-                                icon: const Icon(
-                                  Icons.comment_rounded,
-                                  color: Colors.white,
-                                ),
-                                label: Text(
-                                  'Comment',
-                                  style: GoogleFonts.poppins(
-                                    fontSize: 10,
+                  final createdAt = DateTime.tryParse(post['created_at'] ?? '');
+                  final formattedDate =
+                      createdAt != null ? timeAgo(createdAt) : 'NA';
+                  final userName = post['user_name'] ?? 'Anonymous';
+
+                  return GestureDetector(
+                    onTap: () {
+                      Navigator.push(
+                        context,
+                        MaterialPageRoute(
+                          builder: (_) => ViewPostScreen(post: post),
+                        ),
+                      );
+                    },
+                    child: Card(
+                      margin: const EdgeInsets.symmetric(
+                        horizontal: 16.0,
+                        vertical: 8.0,
+                      ),
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(16),
+                      ),
+                      elevation: 6,
+                      color: const Color(0xFFFDECEF),
+                      child: Padding(
+                        padding: const EdgeInsets.all(16.0),
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Row(
+                              children: [
+                                const CircleAvatar(
+                                  radius: 16, // Reduced size
+                                  backgroundColor: Color(0xFF900C3F),
+                                  child: Icon(
+                                    Icons.person,
                                     color: Colors.white,
+                                    size: 16, // Adjusted icon size
                                   ),
                                 ),
-                              ),
-                              ElevatedButton(
-                                style: ElevatedButton.styleFrom(
-                                  backgroundColor: const Color(0xFF900C3F),
-                                  shape: RoundedRectangleBorder(
-                                    borderRadius: BorderRadius.circular(8),
-                                  ),
-                                ),
-                                onPressed: () {
-                                  Navigator.push(
-                                    context,
-                                    MaterialPageRoute(
-                                      builder:
-                                          (_) => ViewPostScreen(post: post),
+                                const SizedBox(width: 8),
+                                Column(
+                                  crossAxisAlignment: CrossAxisAlignment.start,
+                                  children: [
+                                    Text(
+                                      userName,
+                                      style: GoogleFonts.poppins(
+                                        fontSize: 14,
+                                        fontWeight: FontWeight.w600,
+                                        color: const Color(0xFF900C3F),
+                                      ),
                                     ),
-                                  );
-                                },
-                                child: Text(
-                                  'View Post',
+                                    Text(
+                                      formattedDate,
+                                      style: GoogleFonts.poppins(
+                                        fontSize: 12,
+                                        color: Colors.grey[600],
+                                      ),
+                                    ),
+                                  ],
+                                ),
+                              ],
+                            ),
+                            const SizedBox(height: 12),
+                            Text(
+                              post['title'] ?? 'Untitled',
+                              style: GoogleFonts.poppins(
+                                fontSize: 16,
+                                fontWeight: FontWeight.bold,
+                                color: const Color(0xFF900C3F),
+                              ),
+                            ),
+                            const SizedBox(height: 8),
+                            Text(
+                              (post['content'] ?? '').toString().length > 100
+                                  ? '${(post['content'] ?? '').toString().substring(0, 100)}...'
+                                  : post['content'] ?? '',
+                              style: GoogleFonts.poppins(
+                                fontSize: 14,
+                                color: Colors.black87,
+                              ),
+                            ),
+                            const SizedBox(height: 12),
+                            Row(
+                              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                              children: [
+                                Text(
+                                  'Posted: $formattedDate',
                                   style: GoogleFonts.poppins(
-                                    fontSize: 10,
-                                    color: Colors.white,
+                                    fontSize: 12,
+                                    color: Colors.grey[600],
                                   ),
                                 ),
-                              ),
-                            ],
-                          ),
-                        ],
+                                ElevatedButton.icon(
+                                  style: ElevatedButton.styleFrom(
+                                    backgroundColor: const Color(0xFF900C3F),
+                                    shape: RoundedRectangleBorder(
+                                      borderRadius: BorderRadius.circular(8),
+                                    ),
+                                  ),
+                                  onPressed: () {
+                                    _showCommentDialog(context, post['id']);
+                                  },
+                                  icon: const Icon(
+                                    Icons.comment_rounded,
+                                    color: Colors.white,
+                                    size: 16,
+                                  ),
+                                  label: Text(
+                                    'Comment',
+                                    style: GoogleFonts.poppins(
+                                      fontSize: 12,
+                                      color: Colors.white,
+                                    ),
+                                  ),
+                                ),
+                              ],
+                            ),
+                          ],
+                        ),
                       ),
                     ),
                   );
@@ -316,6 +368,23 @@ class _HomeContentState extends State<HomeContent> {
         ),
       ],
     );
+  }
+
+  String timeAgo(DateTime dateTime) {
+    final now = DateTime.now();
+    final difference = now.difference(dateTime);
+
+    if (difference.inSeconds < 60) {
+      return '${difference.inSeconds} seconds ago';
+    } else if (difference.inMinutes < 60) {
+      return '${difference.inMinutes} minutes ago';
+    } else if (difference.inHours < 24) {
+      return '${difference.inHours} hours ago';
+    } else if (difference.inDays < 7) {
+      return '${difference.inDays} days ago';
+    } else {
+      return '${(difference.inDays / 7).floor()} weeks ago';
+    }
   }
 
   void _showCommentDialog(BuildContext context, dynamic postId) {

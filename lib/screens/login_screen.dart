@@ -68,10 +68,46 @@ class _LoginScreenState extends State<LoginScreen> {
       final user = response.user;
 
       if (user != null) {
+        final funnyNames = [
+          'Crime Master Gogo',
+          'Baburao Ganpatrao Apte',
+          'Professor Parimal Tripathi',
+          'Bhola Bhandari',
+          'Bharat Bhushan Chobey',
+          'Majnu Bhai',
+          'Uday Bhai',
+          'Munna Bhai',
+          'Circuit',
+          'Oye Lucky',
+          'Raju',
+          'Shyam',
+          'Totla Seth',
+          'Pappu Pager',
+          'Chatur Ramalingam',
+          'Virus',
+          'Teja',
+          'Robert',
+          'Bhalla',
+          'Prem Chopra',
+          'Daya No Mercy',
+          'ACP Pradyuman',
+          'Abhijeet',
+          'Doctor Freddy',
+          'Inspector Chulbul Pandey',
+          'Inspector Bajirao Singham',
+          'Rahul Mithaiwala',
+          'Meenamma Lochini Azhagusundaram',
+          'Tangaballi',
+          'Durgeshwara Azhagusundaram',
+          'Murli Prasad Sharma',
+          'Circuit',
+        ];
+        final randomName = (funnyNames..shuffle()).first;
+
         await Supabase.instance.client.from('profiles').insert({
           'id': user.id,
           'email': _emailController.text,
-          'name': _emailController.text.split('@')[0],
+          'name': randomName,
         });
 
         _showMessage('Success', 'Signup successful! Please log in.');

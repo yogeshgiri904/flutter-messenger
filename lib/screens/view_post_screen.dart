@@ -115,7 +115,7 @@ class _ViewPostScreenState extends State<ViewPostScreen> {
                       ),
                       const SizedBox(width: 4),
                       Text(
-                        'By ${author?['name'] ?? 'Unknown'}',
+                        'By ${author?['name'] ?? 'Anonymous'}',
                         style: GoogleFonts.poppins(
                           fontSize: 12,
                           color: Colors.grey,
@@ -129,7 +129,10 @@ class _ViewPostScreenState extends State<ViewPostScreen> {
                       ),
                       const SizedBox(width: 4),
                       Text(
-                        post['created_at']?.toString().split('T').first ?? '',
+                        (DateTime.tryParse(
+                              post['created_at'] ?? '',
+                            )?.toLocal().toString().split('T').first) ??
+                            '',
                         style: GoogleFonts.poppins(
                           fontSize: 12,
                           color: Colors.grey,
@@ -205,11 +208,13 @@ class _ViewPostScreenState extends State<ViewPostScreen> {
                         comments.map((comment) {
                           final user = comment['user'];
                           final createdAt =
-                              comment['created_at']
-                                  ?.toString()
-                                  .split('T')
-                                  .first ??
-                              '';
+                              comment['created_at'] != null
+                                  ? timeAgo(
+                                    DateTime.tryParse(comment['created_at']) ??
+                                        DateTime.now(),
+                                  )
+                                  : '';
+
                           return Card(
                             margin: const EdgeInsets.symmetric(vertical: 4),
                             shape: RoundedRectangleBorder(
@@ -231,7 +236,7 @@ class _ViewPostScreenState extends State<ViewPostScreen> {
                                 style: GoogleFonts.poppins(fontSize: 13),
                               ),
                               subtitle: Text(
-                                'By ${user?['name'] ?? 'Unknown'} • $createdAt',
+                                'By ${user?['name'] ?? 'Anonymous'} • $createdAt',
                                 style: GoogleFonts.poppins(
                                   fontSize: 11,
                                   color: Colors.grey,
@@ -248,5 +253,22 @@ class _ViewPostScreenState extends State<ViewPostScreen> {
         ),
       ),
     );
+  }
+
+  String timeAgo(DateTime dateTime) {
+    final now = DateTime.now();
+    final difference = now.difference(dateTime);
+
+    if (difference.inSeconds < 60) {
+      return '${difference.inSeconds} seconds ago';
+    } else if (difference.inMinutes < 60) {
+      return '${difference.inMinutes} minutes ago';
+    } else if (difference.inHours < 24) {
+      return '${difference.inHours} hours ago';
+    } else if (difference.inDays < 7) {
+      return '${difference.inDays} days ago';
+    } else {
+      return '${(difference.inDays / 7).floor()} weeks ago';
+    }
   }
 }
