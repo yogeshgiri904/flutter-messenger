@@ -8,6 +8,14 @@ import 'view_post_screen.dart';
 import 'friends_screen.dart';
 import 'login_screen.dart';
 
+class ProfileUser {
+  final String id;
+  final String name;
+  final String email;
+
+  ProfileUser({required this.id, required this.name, required this.email});
+}
+
 class HomeScreen extends StatefulWidget {
   const HomeScreen({super.key});
 
@@ -17,6 +25,8 @@ class HomeScreen extends StatefulWidget {
 
 class _HomeScreenState extends State<HomeScreen> {
   int _selectedIndex = 0;
+  final GlobalKey<_HomeContentState> _homeContentKey =
+      GlobalKey<_HomeContentState>();
 
   late final List<Widget> _screens;
 
@@ -24,7 +34,7 @@ class _HomeScreenState extends State<HomeScreen> {
   void initState() {
     super.initState();
     _screens = [
-      HomeContent(refreshCallback: _refreshPosts),
+      HomeContent(key: _homeContentKey, refreshCallback: _refreshPosts),
       const MessageScreen(friendName: ''),
       const FriendsScreen(),
     ];
@@ -36,9 +46,28 @@ class _HomeScreenState extends State<HomeScreen> {
     });
   }
 
-  Future<User?> _getCurrentUser() async {
+  Future<ProfileUser?> _getCurrentUser() async {
     final user = Supabase.instance.client.auth.currentUser;
-    return user;
+    if (user == null) return null;
+
+    final response =
+        await Supabase.instance.client
+            .from('profiles')
+            .select('name, email')
+            .eq('id', user.id)
+            .maybeSingle();
+
+    if (response == null) return null;
+
+    return ProfileUser(
+      id: user.id,
+      name: response['name'] ?? 'No name',
+      email: response['email'] ?? 'No email',
+    );
+  }
+
+  void _refreshPosts() {
+    _homeContentKey.currentState?.refreshPosts();
   }
 
   @override
@@ -74,7 +103,7 @@ class _HomeScreenState extends State<HomeScreen> {
         ],
       ),
       drawer: Drawer(
-        child: FutureBuilder<User?>(
+        child: FutureBuilder<ProfileUser?>(
           future: _getCurrentUser(),
           builder: (context, snapshot) {
             if (snapshot.connectionState == ConnectionState.waiting) {
@@ -92,7 +121,7 @@ class _HomeScreenState extends State<HomeScreen> {
                 UserAccountsDrawerHeader(
                   decoration: const BoxDecoration(color: Color(0xFF900C3F)),
                   accountName: Text(
-                    user?.id ?? 'No ID',
+                    user?.name ?? 'Anonymous',
                     style: GoogleFonts.poppins(fontSize: 12),
                   ),
                   accountEmail: Text(
@@ -131,6 +160,7 @@ class _HomeScreenState extends State<HomeScreen> {
           },
         ),
       ),
+
       body: Container(
         decoration: const BoxDecoration(
           gradient: LinearGradient(
@@ -156,13 +186,11 @@ class _HomeScreenState extends State<HomeScreen> {
               ? FloatingActionButton(
                 backgroundColor: const Color(0xFF900C3F),
                 onPressed: () async {
-                  // Navigate to CreatePostScreen and wait for the result
                   await Navigator.push(
                     context,
                     MaterialPageRoute(builder: (_) => const CreatePostScreen()),
                   );
-                  // After navigating back, refresh the posts
-                  _refreshPosts();
+                  _refreshPosts(); // Now actually refreshes HomeContent
                 },
                 child: const Icon(Icons.add, color: Colors.white),
               )
@@ -189,17 +217,12 @@ class _HomeScreenState extends State<HomeScreen> {
       ),
     );
   }
-
-  void _refreshPosts() {
-    // Notify the HomeContent widget to refresh posts
-    setState(() {});
-  }
 }
 
 class HomeContent extends StatefulWidget {
   final Function refreshCallback;
 
-  HomeContent({super.key, required this.refreshCallback});
+  const HomeContent({super.key, required this.refreshCallback});
 
   @override
   State<HomeContent> createState() => _HomeContentState();
@@ -230,7 +253,7 @@ class _HomeContentState extends State<HomeContent> {
     }).toList();
   }
 
-  Future<void> _refreshPosts() async {
+  Future<void> refreshPosts() async {
     final newPosts = await _fetchPosts();
     setState(() {
       _postsFuture = Future.value(newPosts);
@@ -240,7 +263,7 @@ class _HomeContentState extends State<HomeContent> {
   @override
   Widget build(BuildContext context) {
     return RefreshIndicator(
-      onRefresh: _refreshPosts,
+      onRefresh: refreshPosts,
       child: FutureBuilder(
         future: _postsFuture,
         builder: (context, snapshot) {
@@ -279,7 +302,6 @@ class _HomeContentState extends State<HomeContent> {
                       builder: (_) => ViewPostScreen(post: post),
                     ),
                   ).then((_) {
-                    // After coming back from ViewPostScreen, refresh the posts
                     widget.refreshCallback();
                   });
                 },
