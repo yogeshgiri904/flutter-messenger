@@ -39,7 +39,20 @@ dependencies:
   animations: ^2.0.5
   flutter_dotenv: ^5.2.1
   flutter_quill: ^11.4.0
+  flutter_launcher_icons: ^0.13.1
+  flutter_native_splash: ^2.3.10
 
+flutter_launcher_icons:
+  android: true
+  ios: true
+  image_path: "assets/icon/namaste_logo.png"
+
+flutter_native_splash:
+  color: "#ffffff"
+  image: assets/icon/namaste_splash.png
+  android: true
+  ios: true
+  web: false
 dev_dependencies:
   flutter_test:
     sdk: flutter
