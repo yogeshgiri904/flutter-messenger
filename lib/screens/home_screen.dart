@@ -18,11 +18,17 @@ class HomeScreen extends StatefulWidget {
 class _HomeScreenState extends State<HomeScreen> {
   int _selectedIndex = 0;
 
-  final List<Widget> _screens = [
-    HomeContent(),
-    const MessageScreen(friendName: ''),
-    const FriendsScreen(),
-  ];
+  late final List<Widget> _screens;
+
+  @override
+  void initState() {
+    super.initState();
+    _screens = [
+      HomeContent(refreshCallback: _refreshPosts),
+      const MessageScreen(friendName: ''),
+      const FriendsScreen(),
+    ];
+  }
 
   void _onItemTapped(int index) {
     setState(() {
@@ -44,8 +50,8 @@ class _HomeScreenState extends State<HomeScreen> {
           'Namaste Messenger',
           style: GoogleFonts.poppins(
             color: Colors.white,
-            fontSize: 20,
-            fontWeight: FontWeight.w600,
+            fontSize: 18,
+            fontWeight: FontWeight.w500,
           ),
         ),
         leading: Builder(
@@ -87,13 +93,13 @@ class _HomeScreenState extends State<HomeScreen> {
                   decoration: const BoxDecoration(color: Color(0xFF900C3F)),
                   accountName: Text(
                     user?.id ?? 'No ID',
-                    style: GoogleFonts.poppins(fontSize: 14),
+                    style: GoogleFonts.poppins(fontSize: 12),
                   ),
                   accountEmail: Text(
                     user?.email ?? 'No email',
                     style: GoogleFonts.poppins(
                       color: Colors.white,
-                      fontSize: 12,
+                      fontSize: 10,
                     ),
                   ),
                   currentAccountPicture: const CircleAvatar(
@@ -107,7 +113,7 @@ class _HomeScreenState extends State<HomeScreen> {
                     'Logout',
                     style: GoogleFonts.poppins(
                       color: const Color(0xFF900C3F),
-                      fontSize: 14,
+                      fontSize: 12,
                     ),
                   ),
                   onTap: () async {
@@ -149,13 +155,15 @@ class _HomeScreenState extends State<HomeScreen> {
           _selectedIndex == 0
               ? FloatingActionButton(
                 backgroundColor: const Color(0xFF900C3F),
-                onPressed:
-                    () => Navigator.push(
-                      context,
-                      MaterialPageRoute(
-                        builder: (_) => const CreatePostScreen(),
-                      ),
-                    ),
+                onPressed: () async {
+                  // Navigate to CreatePostScreen and wait for the result
+                  await Navigator.push(
+                    context,
+                    MaterialPageRoute(builder: (_) => const CreatePostScreen()),
+                  );
+                  // After navigating back, refresh the posts
+                  _refreshPosts();
+                },
                 child: const Icon(Icons.add, color: Colors.white),
               )
               : null,
@@ -181,19 +189,34 @@ class _HomeScreenState extends State<HomeScreen> {
       ),
     );
   }
+
+  void _refreshPosts() {
+    // Notify the HomeContent widget to refresh posts
+    setState(() {});
+  }
 }
 
 class HomeContent extends StatefulWidget {
-  HomeContent({super.key});
+  final Function refreshCallback;
+
+  HomeContent({super.key, required this.refreshCallback});
 
   @override
   State<HomeContent> createState() => _HomeContentState();
 }
 
 class _HomeContentState extends State<HomeContent> {
-  final _postsFuture = Supabase.instance.client.from('posts').select().then((
-    posts,
-  ) async {
+  late Future<List<dynamic>> _postsFuture;
+  String _sortBy = 'date';
+
+  @override
+  void initState() {
+    super.initState();
+    _postsFuture = _fetchPosts();
+  }
+
+  Future<List<dynamic>> _fetchPosts() async {
+    final posts = await Supabase.instance.client.from('posts').select();
     final userIds = posts.map((post) => post['user_id']).toSet().toList();
     final profiles = await Supabase.instance.client
         .from('profiles')
@@ -205,168 +228,174 @@ class _HomeContentState extends State<HomeContent> {
       post['user_name'] = profilesMap[post['user_id']]?['name'] ?? 'Anonymous';
       return post;
     }).toList();
-  });
+  }
 
-  String _sortBy = 'date'; // Default sorting by date
+  Future<void> _refreshPosts() async {
+    final newPosts = await _fetchPosts();
+    setState(() {
+      _postsFuture = Future.value(newPosts);
+    });
+  }
 
   @override
   Widget build(BuildContext context) {
-    return Column(
-      children: [
-        Expanded(
-          child: FutureBuilder(
-            future: _postsFuture,
-            builder: (context, snapshot) {
-              if (snapshot.connectionState == ConnectionState.waiting) {
-                return const Center(child: CircularProgressIndicator());
-              }
-              if (snapshot.hasError) {
-                return Center(child: Text('Error: ${snapshot.error}'));
-              }
-              var posts = snapshot.data as List<dynamic>? ?? [];
-              if (_sortBy == 'title') {
-                posts.sort(
-                  (a, b) => (a['title'] ?? '').compareTo(b['title'] ?? ''),
-                );
-              } else {
-                posts.sort(
-                  (a, b) =>
-                      (b['created_at'] ?? '').compareTo(a['created_at'] ?? ''),
-                );
-              }
-              return ListView.builder(
-                itemCount: posts.length,
-                itemBuilder: (context, index) {
-                  final post = posts[index];
-                  final createdAt = DateTime.tryParse(post['created_at'] ?? '');
-                  final formattedDate =
-                      createdAt != null ? timeAgo(createdAt) : 'NA';
-                  final userName = post['user_name'] ?? 'Anonymous';
+    return RefreshIndicator(
+      onRefresh: _refreshPosts,
+      child: FutureBuilder(
+        future: _postsFuture,
+        builder: (context, snapshot) {
+          if (snapshot.connectionState == ConnectionState.waiting) {
+            return const Center(child: CircularProgressIndicator());
+          }
+          if (snapshot.hasError) {
+            return Center(child: Text('Error: ${snapshot.error}'));
+          }
+          var posts = snapshot.data as List<dynamic>? ?? [];
+          if (_sortBy == 'title') {
+            posts.sort(
+              (a, b) => (a['title'] ?? '').compareTo(b['title'] ?? ''),
+            );
+          } else {
+            posts.sort(
+              (a, b) =>
+                  (b['created_at'] ?? '').compareTo(a['created_at'] ?? ''),
+            );
+          }
 
-                  return GestureDetector(
-                    onTap: () {
-                      Navigator.push(
-                        context,
-                        MaterialPageRoute(
-                          builder: (_) => ViewPostScreen(post: post),
-                        ),
-                      );
-                    },
-                    child: Card(
-                      margin: const EdgeInsets.symmetric(
-                        horizontal: 16.0,
-                        vertical: 8.0,
-                      ),
-                      shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(16),
-                      ),
-                      elevation: 6,
-                      color: const Color(0xFFFDECEF),
-                      child: Padding(
-                        padding: const EdgeInsets.all(16.0),
-                        child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
+          return ListView.builder(
+            itemCount: posts.length,
+            itemBuilder: (context, index) {
+              final post = posts[index];
+              final createdAt = DateTime.tryParse(post['created_at'] ?? '');
+              final formattedDate =
+                  createdAt != null ? timeAgo(createdAt) : 'NA';
+              final userName = post['user_name'] ?? 'Anonymous';
+
+              return GestureDetector(
+                onTap: () {
+                  Navigator.push(
+                    context,
+                    MaterialPageRoute(
+                      builder: (_) => ViewPostScreen(post: post),
+                    ),
+                  ).then((_) {
+                    // After coming back from ViewPostScreen, refresh the posts
+                    widget.refreshCallback();
+                  });
+                },
+                child: Card(
+                  margin: const EdgeInsets.symmetric(
+                    horizontal: 16.0,
+                    vertical: 8.0,
+                  ),
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(16),
+                  ),
+                  elevation: 6,
+                  color: const Color(0xFFFDECEF),
+                  child: Padding(
+                    padding: const EdgeInsets.all(16.0),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Row(
                           children: [
-                            Row(
-                              children: [
-                                const CircleAvatar(
-                                  radius: 16, // Reduced size
-                                  backgroundColor: Color(0xFF900C3F),
-                                  child: Icon(
-                                    Icons.person,
-                                    color: Colors.white,
-                                    size: 16, // Adjusted icon size
-                                  ),
-                                ),
-                                const SizedBox(width: 8),
-                                Column(
-                                  crossAxisAlignment: CrossAxisAlignment.start,
-                                  children: [
-                                    Text(
-                                      userName,
-                                      style: GoogleFonts.poppins(
-                                        fontSize: 14,
-                                        fontWeight: FontWeight.w600,
-                                        color: const Color(0xFF900C3F),
-                                      ),
-                                    ),
-                                    Text(
-                                      formattedDate,
-                                      style: GoogleFonts.poppins(
-                                        fontSize: 12,
-                                        color: Colors.grey[600],
-                                      ),
-                                    ),
-                                  ],
-                                ),
-                              ],
-                            ),
-                            const SizedBox(height: 12),
-                            Text(
-                              post['title'] ?? 'Untitled',
-                              style: GoogleFonts.poppins(
-                                fontSize: 16,
-                                fontWeight: FontWeight.bold,
-                                color: const Color(0xFF900C3F),
+                            const CircleAvatar(
+                              radius: 16,
+                              backgroundColor: Color(0xFF900C3F),
+                              child: Icon(
+                                Icons.person,
+                                color: Colors.white,
+                                size: 16,
                               ),
                             ),
-                            const SizedBox(height: 8),
-                            Text(
-                              (post['content'] ?? '').toString().length > 100
-                                  ? '${(post['content'] ?? '').toString().substring(0, 100)}...'
-                                  : post['content'] ?? '',
-                              style: GoogleFonts.poppins(
-                                fontSize: 14,
-                                color: Colors.black87,
-                              ),
-                            ),
-                            const SizedBox(height: 12),
-                            Row(
-                              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                            const SizedBox(width: 8),
+                            Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
                               children: [
                                 Text(
-                                  'Posted: $formattedDate',
+                                  userName,
                                   style: GoogleFonts.poppins(
                                     fontSize: 12,
-                                    color: Colors.grey[600],
+                                    fontWeight: FontWeight.w500,
+                                    color: const Color(0xFF900C3F),
                                   ),
                                 ),
-                                ElevatedButton.icon(
-                                  style: ElevatedButton.styleFrom(
-                                    backgroundColor: const Color(0xFF900C3F),
-                                    shape: RoundedRectangleBorder(
-                                      borderRadius: BorderRadius.circular(8),
-                                    ),
-                                  ),
-                                  onPressed: () {
-                                    _showCommentDialog(context, post['id']);
-                                  },
-                                  icon: const Icon(
-                                    Icons.comment_rounded,
-                                    color: Colors.white,
-                                    size: 16,
-                                  ),
-                                  label: Text(
-                                    'Comment',
-                                    style: GoogleFonts.poppins(
-                                      fontSize: 12,
-                                      color: Colors.white,
-                                    ),
+                                Text(
+                                  formattedDate,
+                                  style: GoogleFonts.poppins(
+                                    fontSize: 10,
+                                    color: Colors.grey[600],
                                   ),
                                 ),
                               ],
                             ),
                           ],
                         ),
-                      ),
+                        const SizedBox(height: 12),
+                        Text(
+                          post['title'] ?? 'Untitled',
+                          style: GoogleFonts.poppins(
+                            fontSize: 14,
+                            fontWeight: FontWeight.bold,
+                            color: const Color(0xFF900C3F),
+                          ),
+                        ),
+                        const SizedBox(height: 8),
+                        Text(
+                          (post['content'] ?? '').toString().length > 100
+                              ? '${(post['content'] ?? '').toString().substring(0, 100)}...'
+                              : post['content'] ?? '',
+                          style: GoogleFonts.poppins(
+                            fontSize: 12,
+                            color: Colors.black87,
+                          ),
+                        ),
+                        const SizedBox(height: 12),
+                        Row(
+                          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                          children: [
+                            Text(
+                              'Posted: $formattedDate',
+                              style: GoogleFonts.poppins(
+                                fontSize: 10,
+                                color: Colors.grey[600],
+                              ),
+                            ),
+                            ElevatedButton.icon(
+                              style: ElevatedButton.styleFrom(
+                                backgroundColor: const Color(0xFF900C3F),
+                                shape: RoundedRectangleBorder(
+                                  borderRadius: BorderRadius.circular(8),
+                                ),
+                              ),
+                              onPressed: () {
+                                _showCommentDialog(context, post['id']);
+                              },
+                              icon: const Icon(
+                                Icons.comment_rounded,
+                                color: Colors.white,
+                                size: 16,
+                              ),
+                              label: Text(
+                                'Comment',
+                                style: GoogleFonts.poppins(
+                                  fontSize: 10,
+                                  color: Colors.white,
+                                ),
+                              ),
+                            ),
+                          ],
+                        ),
+                      ],
                     ),
-                  );
-                },
+                  ),
+                ),
               );
             },
-          ),
-        ),
-      ],
+          );
+        },
+      ),
     );
   }
 
@@ -374,17 +403,12 @@ class _HomeContentState extends State<HomeContent> {
     final now = DateTime.now();
     final difference = now.difference(dateTime);
 
-    if (difference.inSeconds < 60) {
-      return '${difference.inSeconds} seconds ago';
-    } else if (difference.inMinutes < 60) {
-      return '${difference.inMinutes} minutes ago';
-    } else if (difference.inHours < 24) {
-      return '${difference.inHours} hours ago';
-    } else if (difference.inDays < 7) {
-      return '${difference.inDays} days ago';
-    } else {
-      return '${(difference.inDays / 7).floor()} weeks ago';
-    }
+    if (difference.inSeconds < 1) return 'just now';
+    if (difference.inSeconds < 60) return '${difference.inSeconds} seconds ago';
+    if (difference.inMinutes < 60) return '${difference.inMinutes} minutes ago';
+    if (difference.inHours < 24) return '${difference.inHours} hours ago';
+    if (difference.inDays < 7) return '${difference.inDays} days ago';
+    return '${(difference.inDays / 7).floor()} weeks ago';
   }
 
   void _showCommentDialog(BuildContext context, dynamic postId) {
@@ -398,7 +422,7 @@ class _HomeContentState extends State<HomeContent> {
             ),
             title: Text(
               'Add Comment',
-              style: GoogleFonts.poppins(fontSize: 16),
+              style: GoogleFonts.poppins(fontSize: 14),
             ),
             content: TextField(
               controller: commentController,
@@ -407,7 +431,7 @@ class _HomeContentState extends State<HomeContent> {
             actions: [
               TextButton(
                 onPressed: () => Navigator.pop(context),
-                child: Text('Cancel', style: GoogleFonts.poppins(fontSize: 12)),
+                child: Text('Cancel', style: GoogleFonts.poppins(fontSize: 10)),
               ),
               TextButton(
                 onPressed: () async {
@@ -425,6 +449,7 @@ class _HomeContentState extends State<HomeContent> {
                         ScaffoldMessenger.of(context).showSnackBar(
                           const SnackBar(content: Text('Comment added!')),
                         );
+                        widget.refreshCallback();
                       }
                     } catch (e) {
                       if (context.mounted) {
@@ -436,7 +461,7 @@ class _HomeContentState extends State<HomeContent> {
                     }
                   }
                 },
-                child: Text('Submit', style: GoogleFonts.poppins(fontSize: 12)),
+                child: Text('Submit', style: GoogleFonts.poppins(fontSize: 10)),
               ),
             ],
           ),
@@ -454,18 +479,22 @@ class SortOptions extends StatelessWidget {
         children: [
           ListTile(
             leading: const Icon(Icons.date_range),
-            title: const Text('Sort by Date'),
+            title: Text(
+              'Sort by Date',
+              style: GoogleFonts.poppins(fontSize: 12),
+            ),
             onTap: () {
               Navigator.pop(context);
-              // Implement sorting logic here
             },
           ),
           ListTile(
             leading: const Icon(Icons.title),
-            title: const Text('Sort by Title'),
+            title: Text(
+              'Sort by Title',
+              style: GoogleFonts.poppins(fontSize: 12),
+            ),
             onTap: () {
               Navigator.pop(context);
-              // Implement sorting logic here
             },
           ),
         ],
