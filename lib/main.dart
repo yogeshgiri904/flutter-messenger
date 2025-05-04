@@ -1,22 +1,57 @@
-// main.dart
 import 'package:flutter/material.dart';
 import 'package:flutter_dotenv/flutter_dotenv.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import 'screens/login_screen.dart';
 import 'screens/home_screen.dart';
-import 'constants/constants.dart';
+// import 'constants/constants.dart';
 
 Future<void> main() async {
-  FlutterError.onError = (FlutterErrorDetails details) {
-    FlutterError.dumpErrorToConsole(details);
-  };
   WidgetsFlutterBinding.ensureInitialized();
-  await dotenv.load();
-  await Supabase.initialize(
-    url: Constants.supabaseUrl,
-    anonKey: Constants.supabaseAnonKey,
-  );
-  runApp(const MyApp());
+
+  try {
+    await dotenv.load(fileName: ".env");
+    debugPrint("✅ .env loaded");
+    final url = dotenv.env['SUPABASE_URL'];
+    final anonKey = dotenv.env['SUPABASE_ANON_KEY'];
+
+    if (url == null || anonKey == null) {
+      debugPrint("❌ Missing SUPABASE_URL or SUPABASE_ANON_KEY");
+      runApp(const EnvErrorApp());
+      return;
+    }
+
+    await Supabase.initialize(url: url, anonKey: anonKey);
+    debugPrint("✅ Supabase initialized");
+    runApp(const MyApp());
+  } catch (e, stack) {
+    debugPrint("❌ Initialization failed: $e");
+    debugPrintStack(stackTrace: stack);
+    runApp(ConnectionErrorApp(errorMessage: e.toString()));
+  }
+}
+
+class EnvErrorApp extends StatelessWidget {
+  const EnvErrorApp({super.key});
+  @override
+  Widget build(BuildContext context) {
+    return const MaterialApp(
+      home: Scaffold(body: Center(child: Text('Missing env values.'))),
+    );
+  }
+}
+
+class ConnectionErrorApp extends StatelessWidget {
+  final String errorMessage;
+  const ConnectionErrorApp({super.key, required this.errorMessage});
+
+  @override
+  Widget build(BuildContext context) {
+    return MaterialApp(
+      home: Scaffold(
+        body: Center(child: Text('Error initializing app: $errorMessage')),
+      ),
+    );
+  }
 }
 
 class MyApp extends StatelessWidget {
