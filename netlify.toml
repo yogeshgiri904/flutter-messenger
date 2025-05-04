@@ -1,0 +1,3 @@
+[build]
+  command = "bash build_flutter.sh"
+  publish = "build/web"
