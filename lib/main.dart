@@ -7,6 +7,9 @@ import 'screens/home_screen.dart';
 import 'constants/constants.dart';
 
 Future<void> main() async {
+  FlutterError.onError = (FlutterErrorDetails details) {
+    FlutterError.dumpErrorToConsole(details);
+  };
   WidgetsFlutterBinding.ensureInitialized();
   await dotenv.load();
   await Supabase.initialize(
@@ -22,6 +25,7 @@ class MyApp extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return MaterialApp(
+      debugShowCheckedModeBanner: false,
       title: 'Namaste Messenger',
       theme: ThemeData(
         primarySwatch: Colors.red,

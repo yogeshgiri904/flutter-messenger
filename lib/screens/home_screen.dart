@@ -230,7 +230,7 @@ class HomeContent extends StatefulWidget {
 
 class _HomeContentState extends State<HomeContent> {
   late Future<List<dynamic>> _postsFuture;
-  String _sortBy = 'date';
+  final String _sortBy = 'date';
 
   @override
   void initState() {
@@ -273,7 +273,7 @@ class _HomeContentState extends State<HomeContent> {
           if (snapshot.hasError) {
             return Center(child: Text('Error: ${snapshot.error}'));
           }
-          var posts = snapshot.data as List<dynamic>? ?? [];
+          var posts = snapshot.data ?? [];
           if (_sortBy == 'title') {
             posts.sort(
               (a, b) => (a['title'] ?? '').compareTo(b['title'] ?? ''),
@@ -492,6 +492,8 @@ class _HomeContentState extends State<HomeContent> {
 }
 
 class SortOptions extends StatelessWidget {
+  const SortOptions({super.key});
+
   @override
   Widget build(BuildContext context) {
     return Container(

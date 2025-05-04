@@ -76,6 +76,11 @@ flutter:
   # included with your application, so that you can use the icons in
   # the material Icons class.
   uses-material-design: true
+  assets:
+    - assets/icon/namaste.png
+    - assets/icon/namaste_splash.png
+    - assets/icon/giphy.gif
+    - assets/icon/verify.png
 
   # To add assets to your application, add an assets section, like this:
   # assets:
