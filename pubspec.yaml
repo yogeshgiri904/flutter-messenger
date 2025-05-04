@@ -45,7 +45,7 @@ dependencies:
 flutter_launcher_icons:
   android: true
   ios: true
-  image_path: "assets/icon/namaste_logo.png"
+  image_path: "assets/icon/namaste.png"
 
 flutter_native_splash:
   color: "#ffffff"
