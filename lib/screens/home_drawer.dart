@@ -100,7 +100,7 @@ class HomeDrawer extends StatelessWidget {
                 padding: const EdgeInsets.only(bottom: 16.0),
                 child: Center(
                   child: Text(
-                    '© 2025 YourAppName',
+                    '© 2025 Shri Ram Organisation',
                     style: TextStyle(
                       fontSize: 10,
                       color: Colors.grey.shade500,

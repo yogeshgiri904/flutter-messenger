@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
+import 'package:namaste_flutter/screens/login_screen.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import 'home_screen.dart';
 import 'dart:math';
@@ -69,24 +70,27 @@ class _SignupScreenState extends State<SignupScreen> {
       if (user != null) {
         // 1. Get names for the selected gender
         final gender = _selectedGender;
-        final genderSpecificNames = funnyProfiles
-            .where((profile) => profile['gender'] == gender)
-            .map((profile) => profile['name']!)
-            .toList();
+        final genderSpecificNames =
+            funnyProfiles
+                .where((profile) => profile['gender'] == gender)
+                .map((profile) => profile['name']!)
+                .toList();
 
         // 2. Get names already used
         final existingNamesResponse = await Supabase.instance.client
             .from('profiles')
             .select('name');
 
-        final existingNames = (existingNamesResponse as List)
-            .map((profile) => profile['name'] as String)
-            .toSet();
+        final existingNames =
+            (existingNamesResponse as List)
+                .map((profile) => profile['name'] as String)
+                .toSet();
 
         // 3. Get available names that haven't been taken
-        final availableNames = genderSpecificNames
-            .where((name) => !existingNames.contains(name))
-            .toList();
+        final availableNames =
+            genderSpecificNames
+                .where((name) => !existingNames.contains(name))
+                .toList();
 
         // 4. Choose a random name from the available ones
         String randomName;
@@ -98,7 +102,6 @@ class _SignupScreenState extends State<SignupScreen> {
         } else {
           randomName = _emailController.text;
         }
-
 
         await Supabase.instance.client.from('profiles').insert({
           'id': user.id,
@@ -115,16 +118,23 @@ class _SignupScreenState extends State<SignupScreen> {
       _showMessage('Error', 'An error occurred during signup: $e');
     }
   }
-String toCamelCase(String input) {
-  final words = input.split(RegExp(r'\s+'));
-  if (words.isEmpty) return '';
 
-  final firstWord = words.first.toLowerCase();
-  final capitalizedWords = words.skip(1).map((word) =>
-      word.isNotEmpty ? word[0].toUpperCase() + word.substring(1).toLowerCase() : '');
-  
-  return firstWord + capitalizedWords.join();
-}
+  String toCamelCase(String input) {
+    final words = input.split(RegExp(r'\s+'));
+    if (words.isEmpty) return '';
+
+    final firstWord = words.first.toLowerCase();
+    final capitalizedWords = words
+        .skip(1)
+        .map(
+          (word) =>
+              word.isNotEmpty
+                  ? word[0].toUpperCase() + word.substring(1).toLowerCase()
+                  : '',
+        );
+
+    return firstWord + capitalizedWords.join();
+  }
 
   void _showSuccessDialog(String name) {
     showDialog(
@@ -151,27 +161,27 @@ String toCamelCase(String input) {
               mainAxisAlignment: MainAxisAlignment.center,
               children: [
                 const Icon(Icons.verified_user, size: 80, color: Colors.green),
-                const SizedBox(height: 20),
+                const SizedBox(height: 16),
                 Text(
                   'Account Created!',
                   style: GoogleFonts.poppins(
-                    fontSize: 22,
+                    fontSize: 20, // Reduced font size
                     fontWeight: FontWeight.bold,
-                    color: Colors.green[900],
+                    color: Color(0xFF900C3F), // Applying the requested color
                   ),
-                  textAlign: TextAlign.center,
-                ),
-                const SizedBox(height: 12),
-                Text(
-                  'You have been assigned the name:',
-                  style: GoogleFonts.poppins(fontSize: 14),
                   textAlign: TextAlign.center,
                 ),
                 const SizedBox(height: 8),
                 Text(
+                  'You have been assigned the name:',
+                  style: GoogleFonts.poppins(fontSize: 12), // Smaller text
+                  textAlign: TextAlign.center,
+                ),
+                const SizedBox(height: 6),
+                Text(
                   name,
                   style: GoogleFonts.poppins(
-                    fontSize: 20,
+                    fontSize: 18, // Reduced font size
                     fontWeight: FontWeight.bold,
                     color: const Color(0xFF1B5E20),
                   ),
@@ -181,7 +191,7 @@ String toCamelCase(String input) {
                 Text(
                   'Use this name within the app.',
                   style: GoogleFonts.poppins(
-                    fontSize: 13,
+                    fontSize: 12, // Smaller text
                     color: Colors.black87,
                   ),
                   textAlign: TextAlign.center,
@@ -194,41 +204,29 @@ String toCamelCase(String input) {
                     label: Text(
                       'Continue to App',
                       style: GoogleFonts.poppins(
-                        fontSize: 16,
+                        fontSize: 14, // Slightly smaller font
                         fontWeight: FontWeight.w500,
                         color: Colors.white,
                       ),
                     ),
                     style: ElevatedButton.styleFrom(
-                      backgroundColor: Colors.green[800],
+                      backgroundColor: Color(
+                        0xFF900C3F,
+                      ), // Applying the requested color
                       padding: const EdgeInsets.symmetric(vertical: 14),
                       shape: RoundedRectangleBorder(
                         borderRadius: BorderRadius.circular(12),
                       ),
                     ),
                     onPressed: () async {
-                      Navigator.of(context).pop();
-
-                      try {
-                        final response = await Supabase.instance.client.auth
-                            .signInWithPassword(
-                          email: _emailController.text,
-                          password: _passwordController.text,
-                        );
-
-                        if (response.user != null) {
-                          Navigator.pushReplacement(
-                            context,
-                            MaterialPageRoute(
-                              builder: (_) => const HomeScreen(),
-                            ),
-                          );
-                        } else {
-                          _showMessage('Error', 'Login failed after signup.');
-                        }
-                      } catch (e) {
-                        _showMessage('Error', 'Auto-login failed: $e');
-                      }
+                      Navigator.push(
+                        context,
+                        MaterialPageRoute(
+                          builder:
+                              (_) =>
+                                  LoginScreen(), // Pass user info here if needed
+                        ),
+                      );
                     },
                   ),
                 ),
@@ -243,22 +241,23 @@ String toCamelCase(String input) {
   void _showMessage(String title, String message) {
     showDialog(
       context: context,
-      builder: (context) => AlertDialog(
-        title: Text(
-          title,
-          style: GoogleFonts.poppins(fontWeight: FontWeight.bold),
-        ),
-        content: Text(message, style: GoogleFonts.poppins()),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.of(context).pop(),
-            child: Text(
-              'OK',
-              style: GoogleFonts.poppins(color: const Color(0xFF900C3F)),
+      builder:
+          (context) => AlertDialog(
+            title: Text(
+              title,
+              style: GoogleFonts.poppins(fontWeight: FontWeight.bold),
             ),
+            content: Text(message, style: GoogleFonts.poppins()),
+            actions: [
+              TextButton(
+                onPressed: () => Navigator.of(context).pop(),
+                child: Text(
+                  'OK',
+                  style: GoogleFonts.poppins(color: const Color(0xFF900C3F)),
+                ),
+              ),
+            ],
           ),
-        ],
-      ),
     );
   }
 
@@ -277,8 +276,7 @@ String toCamelCase(String input) {
         backgroundColor: const Color(0xFF900C3F),
         iconTheme: const IconThemeData(color: Colors.white),
       ),
-      body: SingleChildScrollView(
-        child: Padding(
+      body: Padding(
           padding: const EdgeInsets.all(16.0),
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.stretch,
@@ -323,17 +321,21 @@ String toCamelCase(String input) {
                   border: OutlineInputBorder(
                     borderRadius: BorderRadius.circular(8),
                   ),
-                  prefixIcon: const Icon(Icons.person_outline, color: Color(0xFF900C3F)),
+                  prefixIcon: const Icon(
+                    Icons.person_outline,
+                    color: Color(0xFF900C3F),
+                  ),
                 ),
-                items: ['male', 'female'].map((gender) {
-                  return DropdownMenuItem(
-                    value: gender,
-                    child: Text(
-                      gender[0].toUpperCase() + gender.substring(1),
-                      style: GoogleFonts.poppins(),
-                    ),
-                  );
-                }).toList(),
+                items:
+                    ['male', 'female'].map((gender) {
+                      return DropdownMenuItem(
+                        value: gender,
+                        child: Text(
+                          gender[0].toUpperCase() + gender.substring(1),
+                          style: GoogleFonts.poppins(),
+                        ),
+                      );
+                    }).toList(),
                 onChanged: (value) {
                   setState(() {
                     _selectedGender = value;
@@ -401,10 +403,22 @@ String toCamelCase(String input) {
                   ),
                 ),
               ),
+              const Spacer(),
+              Padding(
+                padding: const EdgeInsets.only(bottom: 16.0),
+                child: Center(
+                  child: Text(
+                    '© 2025 Shri Ram Organisation',
+                    style: TextStyle(
+                      fontSize: 10,
+                      color: Colors.grey.shade500,
+                    ),
+                  ),
+                ),
+              ),
             ],
           ),
         ),
-      ),
     );
   }
 }

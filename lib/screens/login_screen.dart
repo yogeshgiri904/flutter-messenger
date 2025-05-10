@@ -74,8 +74,7 @@ class _LoginScreenState extends State<LoginScreen> {
         backgroundColor: const Color(0xFF900C3F),
         iconTheme: const IconThemeData(color: Colors.white),
       ),
-      body: SingleChildScrollView(
-        child: Padding(
+      body: Padding(
           padding: const EdgeInsets.all(16.0),
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.stretch,
@@ -163,10 +162,21 @@ class _LoginScreenState extends State<LoginScreen> {
                   ),
                 ),
               ),
-
+              const Spacer(),
+              Padding(
+                padding: const EdgeInsets.only(bottom: 16.0),
+                child: Center(
+                  child: Text(
+                    '© 2025 Shri Ram Organisation',
+                    style: TextStyle(
+                      fontSize: 10,
+                      color: Colors.grey.shade500,
+                    ),
+                  ),
+                ),
+              ),
             ],
           ),
-        ),
       ),
     );
   }
