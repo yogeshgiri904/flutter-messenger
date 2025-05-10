@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import 'message_screen.dart'; // Your chat screen
+import 'dart:math';
 
 class FriendsScreen extends StatefulWidget {
   const FriendsScreen({super.key});
@@ -48,13 +49,26 @@ class _FriendsScreenState extends State<FriendsScreen> {
             itemBuilder: (context, index) {
               final user = users[index];
               final userName = user['name'] ?? 'Anonymous';
+              final gender = user['gender']?.toLowerCase();
+
+              IconData genderIcon;
+              Color avatarColor;
+
+              if (gender == 'female') {
+                genderIcon = Icons.girl_outlined;
+                avatarColor = Colors.pinkAccent;
+              } else if (gender == 'male') {
+                genderIcon = Icons.boy_outlined;
+                avatarColor = Colors.blueAccent;
+              } else {
+                genderIcon = Icons.person;
+                avatarColor = Colors.grey;
+              }
 
               return Card(
                 elevation: 2, // Reduced elevation
                 shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(
-                    8,
-                  ), // Slightly smaller radius
+                  borderRadius: BorderRadius.circular(8),
                 ),
                 color: Colors.pink.shade50,
                 child: ListTile(
@@ -62,14 +76,14 @@ class _FriendsScreenState extends State<FriendsScreen> {
                     horizontal: 12,
                     vertical: 8,
                   ), // Reduced padding
-                  leading: const CircleAvatar(
-                    radius: 18, // Smaller avatar
-                    backgroundColor: Colors.deepPurple,
+                  leading: CircleAvatar(
+                    radius: 18,
+                    backgroundColor: avatarColor,
                     child: Icon(
-                      Icons.person,
+                      genderIcon,
                       color: Colors.white,
-                      size: 18,
-                    ), // Smaller icon
+                      size: 30,
+                    ),
                   ),
                   title: Text(
                     userName,
@@ -84,7 +98,7 @@ class _FriendsScreenState extends State<FriendsScreen> {
                         icon: const Icon(
                           Icons.account_circle_outlined,
                           size: 20,
-                        ), // Smaller icon
+                        ),
                         tooltip: 'View Profile',
                         onPressed: () {
                           // Handle profile navigation
@@ -94,15 +108,13 @@ class _FriendsScreenState extends State<FriendsScreen> {
                         icon: const Icon(
                           Icons.chat_bubble_outline,
                           size: 20,
-                        ), // Smaller icon
+                        ),
                         tooltip: 'Send Message',
                         onPressed: () {
                           Navigator.push(
                             context,
                             MaterialPageRoute(
-                              builder:
-                                  (_) =>
-                                      MessageScreen(), // Pass user info here if needed
+                              builder: (_) => const MessageScreen(),
                             ),
                           );
                         },

@@ -2,7 +2,6 @@ import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:namaste_flutter/screens/login_screen.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
-import 'home_screen.dart';
 import 'dart:math';
 
 class SignupScreen extends StatefulWidget {
@@ -38,10 +37,29 @@ class _SignupScreenState extends State<SignupScreen> {
     {'name': 'Bajirao Singham', 'gender': 'male'},
     {'name': 'Rahul Mithaiwala', 'gender': 'male'},
     {'name': 'Tangaballi', 'gender': 'male'},
+    {'name': 'Rinkia Ke Papa', 'gender': 'male'},
     {'name': 'Murli Prasad Sharma', 'gender': 'male'},
-    {'name': 'DM Madam', 'gender': 'female'},
+    {'name': 'Aham Dikra', 'gender': 'male'},
+    {'name': 'Mahatama Gandhi', 'gender': 'male'},
+
     {'name': 'Meenamma Lochini', 'gender': 'female'},
+    {'name': 'Rajmata Shivgamini', 'gender': 'female'},
     {'name': 'Rinki', 'gender': 'female'},
+    {'name': 'Basanti', 'gender': 'female'},
+    {'name': 'Chameli', 'gender': 'female'},
+    {'name': 'Sweety', 'gender': 'female'},
+    {'name': 'Chinki From China', 'gender': 'female'},
+    {'name': 'Raja Ki Rani', 'gender': 'female'},
+    {'name': 'Gulabo', 'gender': 'female'},
+    {'name': 'Kasturba Gandhi', 'gender': 'female'},
+    {'name': 'Putli Bai', 'gender': 'female'},
+    {'name': 'Baby', 'gender': 'female'},
+    {'name': 'Munni Badnam', 'gender': 'female'},
+    {'name': 'Kokila Ben Shah', 'gender': 'female'},
+    {'name': 'Gopi Bahu', 'gender': 'female'},
+    {'name': 'Shandhya Bhinadi', 'gender': 'female'},
+    {'name': 'Meenakshi Bhinadi', 'gender': 'female'},
+    
   ];
 
   final _emailController = TextEditingController();

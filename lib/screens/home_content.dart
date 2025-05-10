@@ -3,6 +3,7 @@ import 'package:google_fonts/google_fonts.dart';
 import 'package:namaste_flutter/screens/view_post_screen.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import 'package:intl/intl.dart';
+import 'dart:math';
 
 class HomeContent extends StatefulWidget {
   final void Function() refreshCallback; // Adding the callback
@@ -31,12 +32,13 @@ class HomeContentState extends State<HomeContent> {
     final userIds = posts.map((post) => post['user_id']).toSet().toList();
     final profiles = await Supabase.instance.client
         .from('profiles')
-        .select('id, name, email')
+        .select('id, name, gender, email')
         .inFilter('id', userIds);
 
     final profilesMap = {for (var profile in profiles) profile['id']: profile};
     return posts.map((post) {
       post['user_name'] = profilesMap[post['user_id']]?['name'] ?? 'Anonymous';
+      post['gender'] = profilesMap[post['user_id']]?['gender'] ?? '';
       return post;
     }).toList();
   }
@@ -81,6 +83,32 @@ class HomeContentState extends State<HomeContent> {
               final formattedDate =
                   createdAt != null ? timeAgo(createdAt) : 'NA';
               final userName = post['user_name'] ?? 'Anonymous';
+              final gender = post['gender']?.toLowerCase();
+
+              IconData genderIcon;
+              Color getRandomColor() {
+                final Random random = Random();
+
+                return Color.fromARGB(
+                  255, // full opacity
+                  random.nextInt(180), // red
+                  random.nextInt(200), // green
+                  random.nextInt(200), // blue
+                );
+              }
+
+              Color avatarColor = getRandomColor();
+
+              if (gender == 'female') {
+                genderIcon = Icons.girl_outlined;
+                // avatarColor = Colors.pinkAccent;
+              } else if (gender == 'male') {
+                genderIcon = Icons.boy_outlined;
+                // avatarColor = Colors.blueAccent;
+              } else {
+                genderIcon = Icons.person;
+                // avatarColor = Colors.grey;
+              }
 
               return GestureDetector(
                 onTap: () {
@@ -110,15 +138,24 @@ class HomeContentState extends State<HomeContent> {
                       children: [
                         Row(
                           children: [
-                            const CircleAvatar(
-                              radius: 16,
-                              backgroundColor: Color(0xFF900C3F),
-                              child: Icon(
-                                Icons.person,
-                                color: Colors.white,
-                                size: 16,
-                              ),
+                            CircleAvatar(
+                            radius: 16,
+                            backgroundColor: avatarColor,
+                            child: Icon(
+                              genderIcon,
+                              color: Colors.white,
+                              size: 30,
                             ),
+                          ),
+                            // const CircleAvatar(
+                            //   radius: 16,
+                            //   backgroundColor: Color(0xFF900C3F),
+                            //   child: Icon(
+                            //     Icons.person,
+                            //     color: Colors.white,
+                            //     size: 16,
+                            //   ),
+                            // ),
                             const SizedBox(width: 8),
                             Column(
                               crossAxisAlignment: CrossAxisAlignment.start,
