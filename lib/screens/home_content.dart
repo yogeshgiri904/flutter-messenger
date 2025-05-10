@@ -64,6 +64,9 @@ class HomeContentState extends State<HomeContent> {
             return Center(child: Text('Error: ${snapshot.error}'));
           }
           var posts = snapshot.data ?? [];
+          if (posts.isEmpty) {
+            return const Center(child: Text('No Post found.'));
+          }
           if (sortBy == 'title') {
             posts.sort(
               (a, b) => (a['title'] ?? '').compareTo(b['title'] ?? ''),
@@ -139,12 +142,12 @@ class HomeContentState extends State<HomeContent> {
                         Row(
                           children: [
                             CircleAvatar(
-                            radius: 16,
+                            radius: 18,
                             backgroundColor: avatarColor,
                             child: Icon(
                               genderIcon,
                               color: Colors.white,
-                              size: 30,
+                              size: 26,
                             ),
                           ),
                             // const CircleAvatar(

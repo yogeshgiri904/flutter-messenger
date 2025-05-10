@@ -23,8 +23,12 @@ class CustomBottomNavigationBar extends StatelessWidget {
           label: 'Home',
         ),
         BottomNavigationBarItem(
+          icon: Icon(Icons.leaderboard),
+          label: 'Leaderboard',
+        ),
+         BottomNavigationBarItem(
           icon: Icon(Icons.message_rounded),
-          label: 'Inbox',
+          label: 'Indox',
         ),
         BottomNavigationBarItem(
           icon: Icon(Icons.group_rounded),

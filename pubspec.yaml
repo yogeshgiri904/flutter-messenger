@@ -45,6 +45,7 @@ dependencies:
   flutter_native_splash: ^2.3.10
   url_launcher: ^6.0.9
   connectivity_plus: ^5.0.2
+  collection: ^1.17.2
 
 flutter_launcher_icons:
   android: true

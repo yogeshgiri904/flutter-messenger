@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:namaste_flutter/screens/inbox_screen.dart';
 import 'package:namaste_flutter/screens/not_found.dart';
 import 'home_drawer.dart';
 import 'home_content.dart';
@@ -27,6 +28,7 @@ class _HomeScreenState extends State<HomeScreen> {
     _screens = [
       HomeContent(key: _homeContentKey, refreshCallback: _refreshPosts, currentSort: _currentSort, onSortSelected: _onSortSelected),
       const NotFoundPage(),
+      const InboxScreen(),
       const FriendsScreen(),
     ];
   }
