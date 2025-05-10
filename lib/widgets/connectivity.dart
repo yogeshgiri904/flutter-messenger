@@ -1,8 +1,6 @@
-
 import 'package:connectivity_plus/connectivity_plus.dart';
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
-
 
 class ConnectivityWrapper extends StatefulWidget {
   final Widget child;
@@ -39,18 +37,19 @@ class _ConnectivityWrapperState extends State<ConnectivityWrapper> {
   Widget build(BuildContext context) {
     if (_isOffline) {
       return MaterialApp(
+        debugShowCheckedModeBanner: false,
         home: Scaffold(
           appBar: AppBar(
-        backgroundColor: const Color(0xFF900C3F),
-        title: Text(
-          'Namaste Messenger',
-          style: GoogleFonts.poppins(
-            color: Colors.white,
-            fontSize: 18,
-            fontWeight: FontWeight.w500,
+            backgroundColor: const Color(0xFF900C3F),
+            title: Text(
+              'Namaste Messenger',
+              style: GoogleFonts.poppins(
+                color: Colors.white,
+                fontSize: 18,
+                fontWeight: FontWeight.w500,
+              ),
+            ),
           ),
-        ),
-      ),
           backgroundColor: Colors.grey.shade100,
           body: Center(
             child: Padding(
@@ -71,7 +70,11 @@ class _ConnectivityWrapperState extends State<ConnectivityWrapper> {
                 child: Column(
                   mainAxisSize: MainAxisSize.min,
                   children: [
-                    const Icon(Icons.wifi_off, size: 80, color: Color(0xFF900C3F)),
+                    const Icon(
+                      Icons.wifi_off,
+                      size: 80,
+                      color: Color(0xFF900C3F),
+                    ),
                     const SizedBox(height: 20),
                     Text(
                       'No Internet Connection',
@@ -85,7 +88,10 @@ class _ConnectivityWrapperState extends State<ConnectivityWrapper> {
                     const SizedBox(height: 12),
                     Text(
                       'Please check your internet connection and try again.',
-                      style: GoogleFonts.poppins(fontSize: 14, color: Colors.black54),
+                      style: GoogleFonts.poppins(
+                        fontSize: 14,
+                        color: Colors.black54,
+                      ),
                       textAlign: TextAlign.center,
                     ),
                     const SizedBox(height: 24),
@@ -101,7 +107,10 @@ class _ConnectivityWrapperState extends State<ConnectivityWrapper> {
                       ),
                       style: ElevatedButton.styleFrom(
                         backgroundColor: const Color(0xFF900C3F),
-                        padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 12),
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: 24,
+                          vertical: 12,
+                        ),
                         shape: RoundedRectangleBorder(
                           borderRadius: BorderRadius.circular(10),
                         ),

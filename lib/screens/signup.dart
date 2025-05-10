@@ -276,7 +276,8 @@ class _SignupScreenState extends State<SignupScreen> {
         backgroundColor: const Color(0xFF900C3F),
         iconTheme: const IconThemeData(color: Colors.white),
       ),
-      body: Padding(
+      body: SingleChildScrollView(
+        child: Padding(
           padding: const EdgeInsets.all(16.0),
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.stretch,
@@ -403,7 +404,7 @@ class _SignupScreenState extends State<SignupScreen> {
                   ),
                 ),
               ),
-              const Spacer(),
+              const SizedBox(height: 80.0),
               Padding(
                 padding: const EdgeInsets.only(bottom: 16.0),
                 child: Center(
@@ -419,6 +420,7 @@ class _SignupScreenState extends State<SignupScreen> {
             ],
           ),
         ),
+      ),
     );
   }
 }

@@ -74,7 +74,8 @@ class _LoginScreenState extends State<LoginScreen> {
         backgroundColor: const Color(0xFF900C3F),
         iconTheme: const IconThemeData(color: Colors.white),
       ),
-      body: Padding(
+      body: SingleChildScrollView(
+        child: Padding(
           padding: const EdgeInsets.all(16.0),
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.stretch,
@@ -162,7 +163,7 @@ class _LoginScreenState extends State<LoginScreen> {
                   ),
                 ),
               ),
-              const Spacer(),
+              const SizedBox(height: 220.0),
               Padding(
                 padding: const EdgeInsets.only(bottom: 16.0),
                 child: Center(
@@ -177,6 +178,7 @@ class _LoginScreenState extends State<LoginScreen> {
               ),
             ],
           ),
+        ),
       ),
     );
   }
