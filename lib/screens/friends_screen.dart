@@ -1,7 +1,6 @@
 import 'package:flutter/material.dart';
-import 'package:google_fonts/google_fonts.dart'; // Import Google Fonts package
 import 'package:supabase_flutter/supabase_flutter.dart';
-import 'message_screen.dart'; // Import message screen to send messages
+import 'message_screen.dart'; // Your chat screen
 
 class FriendsScreen extends StatefulWidget {
   const FriendsScreen({super.key});
@@ -22,60 +21,77 @@ class _FriendsScreenState extends State<FriendsScreen> {
           if (snapshot.connectionState == ConnectionState.waiting) {
             return const Center(child: CircularProgressIndicator());
           }
+
           if (snapshot.hasError) {
             return Center(
               child: Text(
                 'Error: ${snapshot.error}',
-                style: GoogleFonts.poppins(fontSize: 12),
+                style: const TextStyle(fontSize: 14, color: Colors.red),
               ),
             );
           }
+
           final users = snapshot.data as List<dynamic>? ?? [];
+
+          if (users.isEmpty) {
+            return const Center(
+              child: Text(
+                'No friends found.',
+                style: TextStyle(fontSize: 16, color: Colors.grey),
+              ),
+            );
+          }
+
           return ListView.builder(
+            padding: const EdgeInsets.all(8.0),
             itemCount: users.length,
             itemBuilder: (context, index) {
               final user = users[index];
+              final userName = user['name'] ?? 'Anonymous';
+
               return Card(
-                margin: const EdgeInsets.all(8.0),
-                color: const Color.fromARGB(255, 245, 184, 207),
-                child: Padding(
-                  padding: const EdgeInsets.all(12.0),
-                  child: Row(
-                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                elevation: 3,
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(12),
+                ),
+                color: Colors.pink.shade50,
+                child: ListTile(
+                  contentPadding: const EdgeInsets.symmetric(
+                    horizontal: 16,
+                    vertical: 12,
+                  ),
+                  leading: const CircleAvatar(
+                    backgroundColor: Colors.pinkAccent,
+                    child: Icon(Icons.person, color: Colors.white),
+                  ),
+                  title: Text(
+                    userName,
+                    style: const TextStyle(
+                      fontWeight: FontWeight.w600,
+                      fontSize: 16,
+                    ),
+                  ),
+                  trailing: Wrap(
+                    spacing: 12,
                     children: [
-                      Text(
-                        user['email'] ?? 'No Email',
-                        style: GoogleFonts.poppins(
-                          fontWeight: FontWeight.bold,
-                          fontSize: 12,
-                        ),
+                      IconButton(
+                        icon: const Icon(Icons.account_circle_outlined),
+                        tooltip: 'View Profile',
+                        onPressed: () {
+                          // Handle profile navigation
+                        },
                       ),
-                      Row(
-                        children: [
-                          IconButton(
-                            icon: const Icon(Icons.account_circle_outlined),
-                            tooltip: 'View Profile',
-                            onPressed: () {
-                              // Navigate to user profile
-                            },
-                          ),
-                          IconButton(
-                            icon: const Icon(Icons.chat_bubble_outline),
-                            tooltip: 'Send Message',
-                            onPressed: () {
-                              // Navigate to message screen with user ID
-                              Navigator.push(
-                                context,
-                                MaterialPageRoute(
-                                  builder:
-                                      (_) => MessageScreen(
-                                        friendName: user['email'] ?? 'No Name',
-                                      ), // Pass user email as friend name
-                                ),
-                              );
-                            },
-                          ),
-                        ],
+                      IconButton(
+                        icon: const Icon(Icons.chat_bubble_outline),
+                        tooltip: 'Send Message',
+                        onPressed: () {
+                          Navigator.push(
+                            context,
+                            MaterialPageRoute(
+                              builder: (_) => MessageScreen(), // You can pass user info here
+                            ),
+                          );
+                        },
                       ),
                     ],
                   ),

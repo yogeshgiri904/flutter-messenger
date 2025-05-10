@@ -3,7 +3,7 @@ import 'package:flutter_dotenv/flutter_dotenv.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import 'screens/login_screen.dart';
 import 'screens/home_screen.dart';
-// import 'constants/constants.dart';
+import 'widgets/connectivity.dart';
 
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -22,7 +22,7 @@ Future<void> main() async {
 
     await Supabase.initialize(url: url, anonKey: anonKey);
     debugPrint("✅ Supabase initialized");
-    runApp(const MyApp());
+    runApp(ConnectivityWrapper(child: const MyApp()));
   } catch (e, stack) {
     debugPrint("❌ Initialization failed: $e");
     debugPrintStack(stackTrace: stack);
@@ -64,17 +64,16 @@ class MyApp extends StatelessWidget {
       title: 'Namaste Messenger',
       theme: ThemeData(
         primarySwatch: Colors.red,
-        primaryColor: const Color(0xFF900C3F), // Updated to #900C3F
+        primaryColor: const Color(0xFF900C3F),
         appBarTheme: const AppBarTheme(backgroundColor: Color(0xFF900C3F)),
         buttonTheme: ButtonThemeData(
           buttonColor: const Color(0xFF900C3F),
           textTheme: ButtonTextTheme.primary,
         ),
       ),
-      home:
-          Supabase.instance.client.auth.currentUser == null
-              ? const LoginScreen()
-              : const HomeScreen(),
+      home: Supabase.instance.client.auth.currentUser == null
+          ? const LoginScreen()
+          : const HomeScreen(),
     );
   }
 }

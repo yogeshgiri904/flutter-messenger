@@ -1,149 +1,175 @@
 import 'package:flutter/material.dart';
-import 'package:google_fonts/google_fonts.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
-import 'package:rxdart/rxdart.dart';
+import 'package:google_fonts/google_fonts.dart';
 
 class MessageScreen extends StatefulWidget {
-  final String friendName;
-  const MessageScreen({super.key, required this.friendName});
+  const MessageScreen({super.key});
 
   @override
   State<MessageScreen> createState() => _MessageScreenState();
 }
 
 class _MessageScreenState extends State<MessageScreen> {
-  final _messageController = TextEditingController();
+  final SupabaseClient supabase = Supabase.instance.client;
+  final TextEditingController _controller = TextEditingController();
+  final String username = "User${DateTime.now().millisecondsSinceEpoch}";
+  late RealtimeChannel _channel;
+  List<Map<String, dynamic>> messages = [];
+  bool _isSubmitting = false;  // To control the loading state for the send button
 
-  String get _currentUserId => Supabase.instance.client.auth.currentUser!.id;
+  @override
+  void initState() {
+    super.initState();
+    _subscribeToMessages();
+    _loadInitialMessages();
+  }
 
-  Stream<List<Map<String, dynamic>>> _getMessagesStream(String recipientId) {
-    final currentUserId = Supabase.instance.client.auth.currentUser!.id;
+  void _subscribeToMessages() {
+    _channel = supabase.channel('public:messages')
+      ..onPostgresChanges(
+        event: PostgresChangeEvent.insert,
+        schema: 'public',
+        table: 'messages',
+        callback: (payload) {
+          setState(() {
+            messages.insert(0, payload.newRecord);
+          });
+        },
+      ).subscribe();
+  }
 
-    final fromMe = Supabase.instance.client
+  Future<void> _loadInitialMessages() async {
+    final response = await supabase
         .from('messages')
-        .stream(primaryKey: ['id'])
-        .eq('recipient_id', recipientId);
+        .select()
+        .order('inserted_at', ascending: false)
+        .limit(30);
 
-    final toMe = Supabase.instance.client
-        .from('messages')
-        .stream(primaryKey: ['id'])
-        .eq('recipient_id', currentUserId);
-
-    return Rx.combineLatest2(fromMe, toMe, (
-      List<Map<String, dynamic>> a,
-      List<Map<String, dynamic>> b,
-    ) {
-      final allMessages = [...a, ...b];
-      allMessages.sort(
-        (x, y) => DateTime.parse(
-          x['created_at'],
-        ).compareTo(DateTime.parse(y['created_at'])),
-      );
-      return allMessages;
+    setState(() {
+      messages = List<Map<String, dynamic>>.from(response);
     });
   }
 
-  Future<void> _sendMessage(String recipientId) async {
-    final content = _messageController.text.trim();
+  Future<void> _sendMessage() async {
+    final text = _controller.text.trim();
+    if (text.isEmpty) return;
 
-    if (content.isEmpty) return;
+    setState(() {
+      _isSubmitting = true;
+    });
 
-    try {
-      await Supabase.instance.client.from('messages').insert({
-        'sender_id': _currentUserId,
-        'recipient_id': recipientId,
-        'content': content,
-      });
-      _messageController.clear();
-    } catch (e) {
-      ScaffoldMessenger.of(
-        context,
-      ).showSnackBar(SnackBar(content: Text('Error sending message: $e')));
-    }
+    await supabase.from('messages').insert({
+      'content': text,
+      'username': username,
+    });
+
+    _controller.clear();
+
+    setState(() {
+      _isSubmitting = false;
+    });
+  }
+
+  @override
+  void dispose() {
+    _channel.unsubscribe();
+    _controller.dispose();
+    super.dispose();
   }
 
   @override
   Widget build(BuildContext context) {
-    const primaryColor = Color(0xFF900C3F);
-    final recipientId = widget.friendName;
-
     return Scaffold(
-      appBar:
-          widget.friendName.isNotEmpty
-              ? AppBar(
-                title: Text(
-                  'Chat with ${widget.friendName}',
-                  style: GoogleFonts.poppins(color: Colors.white, fontSize: 16),
-                ),
-                backgroundColor: primaryColor,
-              )
-              : null,
+      appBar: AppBar(
+        title: const Text('Chat (* Not Working)', style: TextStyle(color: Colors.white)),
+        backgroundColor: const Color(0xFF900C3F),
+        iconTheme: IconThemeData(color: Colors.white),
+      ),
       body: Column(
         children: [
           Expanded(
-            child: StreamBuilder<List<Map<String, dynamic>>>(
-              stream: _getMessagesStream(recipientId),
-              builder: (context, snapshot) {
-                if (!snapshot.hasData) {
-                  return const Center(child: CircularProgressIndicator());
-                }
-                final messages = snapshot.data!;
-                return ListView.builder(
-                  padding: const EdgeInsets.symmetric(horizontal: 8),
-                  itemCount: messages.length,
-                  itemBuilder: (context, index) {
-                    final message = messages[index];
-                    final isMe = message['sender_id'] == _currentUserId;
-                    return Align(
-                      alignment:
-                          isMe ? Alignment.centerRight : Alignment.centerLeft,
-                      child: Container(
-                        margin: const EdgeInsets.symmetric(vertical: 4),
-                        padding: const EdgeInsets.all(10),
-                        decoration: BoxDecoration(
-                          color: isMe ? primaryColor : Colors.grey.shade300,
-                          borderRadius: BorderRadius.circular(8),
-                        ),
-                        child: Text(
-                          message['content'] ?? '',
-                          style: GoogleFonts.poppins(
-                            fontSize: 12,
-                            color: isMe ? Colors.white : Colors.black,
-                          ),
-                        ),
-                      ),
-                    );
-                  },
+            child: ListView.builder(
+              reverse: true,
+              itemCount: messages.length,
+              itemBuilder: (context, index) {
+                final message = messages[index];
+                return ListTile(
+                  title: Text(message['username'] ?? 'Unknown'),
+                  subtitle: Text(message['content'] ?? ''),
                 );
               },
             ),
           ),
-          Padding(
-            padding: const EdgeInsets.all(8.0),
+          Container(
+            padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+            decoration: BoxDecoration(
+              color: Colors.white,
+              boxShadow: [
+                BoxShadow(
+                  color: Colors.black.withOpacity(0.05),
+                  blurRadius: 6,
+                  offset: const Offset(0, -3),
+                ),
+              ],
+            ),
             child: Row(
               children: [
                 Expanded(
                   child: TextField(
-                    controller: _messageController,
-                    style: GoogleFonts.poppins(fontSize: 12),
+                    controller: _controller,
+                    minLines: 1,
+                    maxLines: 3,
+                    style: GoogleFonts.poppins(fontSize: 13),
                     decoration: InputDecoration(
-                      labelText: 'Message',
-                      labelStyle: GoogleFonts.poppins(
-                        color: primaryColor,
+                      hintText: 'Send a message...',
+                      hintStyle: GoogleFonts.poppins(
                         fontSize: 12,
+                        color: Colors.grey,
                       ),
-                      enabledBorder: const OutlineInputBorder(
-                        borderSide: BorderSide(color: primaryColor),
+                      contentPadding: const EdgeInsets.symmetric(
+                        horizontal: 12,
+                        vertical: 8,
                       ),
-                      focusedBorder: const OutlineInputBorder(
-                        borderSide: BorderSide(color: primaryColor),
+                      isDense: true,
+                      border: OutlineInputBorder(
+                        borderRadius: BorderRadius.circular(20),
+                        borderSide: BorderSide(color: Colors.grey.shade300),
+                      ),
+                      focusedBorder: OutlineInputBorder(
+                        borderRadius: BorderRadius.circular(20),
+                        borderSide: const BorderSide(color: Color(0xFF900C3F)),
                       ),
                     ),
                   ),
                 ),
-                IconButton(
-                  icon: const Icon(Icons.send, color: primaryColor),
-                  onPressed: () => _sendMessage(recipientId),
+                const SizedBox(width: 8),
+                SizedBox(
+                  height: 36,
+                  width: 36,
+                  child: ElevatedButton(
+                    onPressed: _isSubmitting ? null : _sendMessage,
+                    style: ElevatedButton.styleFrom(
+                      padding: EdgeInsets.zero,
+                      backgroundColor: const Color(0xFF900C3F),
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(20),
+                      ),
+                    ),
+                    child: _isSubmitting
+                        ? const SizedBox(
+                            width: 16,
+                            height: 16,
+                            child: CircularProgressIndicator(
+                              strokeWidth: 2,
+                              color: Colors.white,
+                            ),
+                          )
+                        : const Icon(
+                            Icons.send,
+                            size: 18,
+                            color: Colors.white,
+                          ),
+                  ),
                 ),
               ],
             ),
