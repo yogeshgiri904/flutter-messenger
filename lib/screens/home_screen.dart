@@ -1,9 +1,7 @@
 import 'package:flutter/material.dart';
-import 'package:provider/provider.dart';
 import 'package:namaste_flutter/screens/inbox_screen.dart';
 import 'package:namaste_flutter/screens/not_found.dart';
 
-import '../notifiers/message_notifier.dart';
 import 'home_drawer.dart';
 import 'home_content.dart';
 import 'custom_app_bar.dart';
@@ -60,7 +58,6 @@ class _HomeScreenState extends State<HomeScreen> {
 
   @override
   Widget build(BuildContext context) {
-    final unreadCount = context.watch<MessageNotifier>().unreadCount;
 
     return Scaffold(
       appBar: buildCustomAppBar(context, _currentSort, _onSortSelected),

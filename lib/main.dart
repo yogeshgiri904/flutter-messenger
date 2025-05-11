@@ -29,7 +29,7 @@ Future<void> main() async {
     runApp(
       MultiProvider(
         providers: [
-          ChangeNotifierProvider(create: (_) => MessageNotifier()), // <-- NEW: Provide message notifier globally
+          ChangeNotifierProvider(create: (_) => MessageNotifier()),
         ],
         child: ConnectivityWrapper(child: const MyApp()),
       ),
