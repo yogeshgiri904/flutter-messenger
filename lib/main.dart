@@ -1,9 +1,12 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_dotenv/flutter_dotenv.dart';
+import 'package:provider/provider.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
+
 import 'screens/login_screen.dart';
 import 'screens/home_screen.dart';
 import 'widgets/connectivity.dart';
+import 'notifiers/message_notifier.dart';
 
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -22,7 +25,15 @@ Future<void> main() async {
 
     await Supabase.initialize(url: url, anonKey: anonKey);
     debugPrint("✅ Supabase initialized");
-    runApp(ConnectivityWrapper(child: const MyApp()));
+
+    runApp(
+      MultiProvider(
+        providers: [
+          ChangeNotifierProvider(create: (_) => MessageNotifier()), // <-- NEW: Provide message notifier globally
+        ],
+        child: ConnectivityWrapper(child: const MyApp()),
+      ),
+    );
   } catch (e, stack) {
     debugPrint("❌ Initialization failed: $e");
     debugPrintStack(stackTrace: stack);
@@ -32,10 +43,13 @@ Future<void> main() async {
 
 class EnvErrorApp extends StatelessWidget {
   const EnvErrorApp({super.key});
+
   @override
   Widget build(BuildContext context) {
     return const MaterialApp(
-      home: Scaffold(body: Center(child: Text('Missing env values.'))),
+      home: Scaffold(
+        body: Center(child: Text('Missing env values.')),
+      ),
     );
   }
 }
