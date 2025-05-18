@@ -1,4 +1,4 @@
-# 🚀 Namaste App : Your Anonymous Collaboration Space! 🎉
+# 🚀 Namaste App : Laugh, Chat, Collaborate! 🎉
 
 Say hello to a playful way to connect and collaborate! This app packs in everything you need to share, react together without revealing who you are unless you want to 😉
 
