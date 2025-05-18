@@ -14,4 +14,5 @@ Random Funny Names: Stay anonymous with quirky, randomly assigned usernames from
 
 Collaboration Leaderboard: Compete (or team up) with others and climb the ranks based on your activity and community impact!
 
-# "Use this as your college project or to enhance your learning. Get full access to the complete codebase for free via the public GitHub repository. If you find it helpful, consider giving the repo a star!" - Yogesh Giri (Software Developer)
+"Use this as your college project or to enhance your learning. Get full access to the complete codebase for free via the public GitHub repository. If you find it helpful, consider giving the repo a star!" 
+# - Yogesh Giri (Software Developer)
