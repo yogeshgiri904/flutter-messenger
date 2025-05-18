@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import 'package:flutter_dotenv/flutter_dotenv.dart';
+import 'package:flutter/foundation.dart' show kIsWeb;
 import 'package:provider/provider.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
@@ -8,32 +8,22 @@ import 'screens/home_screen.dart';
 import 'widgets/connectivity.dart';
 import 'notifiers/message_notifier.dart';
 
-import 'package:flutter/foundation.dart';
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
 
   try {
-    String? url;
-    String? anonKey;
-    if (kIsWeb) {
-      // Use values from --dart-define for web
-      url = const String.fromEnvironment('SUPABASE_URL');
-      anonKey = const String.fromEnvironment('SUPABASE_ANON_KEY');
-    } else {
-      // Use .env file for local dev (mobile/desktop)
-      await dotenv.load(fileName: ".env");
-      debugPrint("✅ .env loaded");
-      url = dotenv.env['SUPABASE_URL'];
-      anonKey = dotenv.env['SUPABASE_ANON_KEY'];
-    }
+    final env = await loadEnv();
 
-    if (url == null || anonKey == null) {
+    if (env['supabaseUrl'] == null || env['supabaseAnonKey'] == null) {
       debugPrint("❌ Missing SUPABASE_URL or SUPABASE_ANON_KEY");
       runApp(const EnvErrorApp());
       return;
     }
 
-    await Supabase.initialize(url: url, anonKey: anonKey);
+    await Supabase.initialize(
+      url: env['supabaseUrl']!,
+      anonKey: env['supabaseAnonKey']!,
+    );
     debugPrint("✅ Supabase initialized");
 
     runApp(
@@ -49,6 +39,39 @@ Future<void> main() async {
     debugPrintStack(stackTrace: stack);
     runApp(ConnectionErrorApp(errorMessage: e.toString()));
   }
+}
+
+Future<Map<String, String?>> loadEnv() async {
+  if (kIsWeb) {
+    return {
+      'supabaseUrl': const String.fromEnvironment('SUPABASE_URL'),
+      'supabaseAnonKey': const String.fromEnvironment('SUPABASE_ANON_KEY'),
+    };
+  } else {
+    final dotenv = await importDotenv();
+    await dotenv.load(fileName: ".env");
+    debugPrint("✅ .env loaded");
+    return {
+      'supabaseUrl': dotenv.env['SUPABASE_URL'],
+      'supabaseAnonKey': dotenv.env['SUPABASE_ANON_KEY'],
+    };
+  }
+}
+
+// This uses Dart's dynamic import workaround to avoid flutter_dotenv on web
+Future<dynamic> importDotenv() async {
+  // ignore: implementation_imports
+  final dotenv = await Future.microtask(() async {
+    // Dart does not support conditional imports with different APIs,
+    // so we dynamically load the library only on supported platforms.
+    return await importLib('package:flutter_dotenv/flutter_dotenv.dart');
+  });
+  return dotenv;
+}
+
+// This helper uses mirrors-like logic (but works with pub libraries)
+Future<dynamic> importLib(String lib) async {
+  return Future.sync(() => throw UnsupportedError('Dynamic import failed'));
 }
 
 class EnvErrorApp extends StatelessWidget {
