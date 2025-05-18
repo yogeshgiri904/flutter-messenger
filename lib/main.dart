@@ -8,14 +8,24 @@ import 'screens/home_screen.dart';
 import 'widgets/connectivity.dart';
 import 'notifiers/message_notifier.dart';
 
+import 'package:flutter/foundation.dart';
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
 
   try {
-    await dotenv.load(fileName: ".env");
-    debugPrint("✅ .env loaded");
-    final url = dotenv.env['SUPABASE_URL'];
-    final anonKey = dotenv.env['SUPABASE_ANON_KEY'];
+    String? url;
+    String? anonKey;
+    if (kIsWeb) {
+      // Use values from --dart-define for web
+      url = const String.fromEnvironment('SUPABASE_URL');
+      anonKey = const String.fromEnvironment('SUPABASE_ANON_KEY');
+    } else {
+      // Use .env file for local dev (mobile/desktop)
+      await dotenv.load(fileName: ".env");
+      debugPrint("✅ .env loaded");
+      url = dotenv.env['SUPABASE_URL'];
+      anonKey = dotenv.env['SUPABASE_ANON_KEY'];
+    }
 
     if (url == null || anonKey == null) {
       debugPrint("❌ Missing SUPABASE_URL or SUPABASE_ANON_KEY");
